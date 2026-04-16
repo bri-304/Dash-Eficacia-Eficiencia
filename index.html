@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Consolide</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1a1a2e; font-family: Arial, sans-serif; }
+
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: white;
+      font-size: 1.2rem;
+      gap: 16px;
+    }
+
+    .spinner {
+      width: 48px; height: 48px;
+      border: 5px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #timer-bar {
+      position: fixed;
+      bottom: 0; left: 0;
+      height: 4px;
+      background: #4CAF50;
+      transition: width 1s linear;
+      z-index: 1000;
+    }
+
+    #info {
+      position: fixed;
+      bottom: 8px; right: 12px;
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      z-index: 1000;
+      font-family: Arial, sans-serif;
+    }
+
+    iframe {
+      width: 100vw;
+      height: 100vh;
+      border: none;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="overlay">
+    <div class="spinner"></div>
+    <span>🔄 Atualizando dashboard...</span>
+  </div>
+
+  <div id="timer-bar"></div>
+  <div id="info">Próxima atualização: <span id="countdown"></span></div>
+
+  <!-- Cole aqui o link de incorporação do seu Looker Studio -->
+  <iframe id="looker-frame"
+    src="https://datastudio.google.com/embed/reporting/dceefa51-c301-44c9-a089-963041ad034d"
+    allowfullscreen>
+  </iframe>
+
+  <script>
+    const INTERVALO_MINUTOS = 6; // ← ajuste aqui o tempo entre refreshes
+    const TOTAL_SEGUNDOS = INTERVALO_MINUTOS * 60;
+
+    let segundosRestantes = TOTAL_SEGUNDOS;
+    const frame = document.getElementById('looker-frame');
+    const overlay = document.getElementById('overlay');
+    const bar = document.getElementById('timer-bar');
+    const countdown = document.getElementById('countdown');
+
+    function atualizarBarra() {
+      const pct = ((TOTAL_SEGUNDOS - segundosRestantes) / TOTAL_SEGUNDOS) * 100;
+      bar.style.width = pct + '%';
+    }
+
+    function formatarTempo(s) {
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      return `${m}:${sec.toString().padStart(2,'0')}`;
+    }
+
+    function recarregar() {
+      overlay.style.display = 'flex';
+      const urlAtual = frame.src;
+      frame.src = '';
+      setTimeout(() => {
+        frame.src = urlAtual;
+        segundosRestantes = TOTAL_SEGUNDOS;
+        atualizarBarra();
+      }, 500);
+
+      frame.onload = () => {
+        overlay.style.display = 'none';
+      };
+    }
+
+    setInterval(() => {
+      segundosRestantes--;
+      countdown.textContent = formatarTempo(segundosRestantes);
+      atualizarBarra();
+
+      if (segundosRestantes <= 0) {
+        recarregar();
+      }
+    }, 1000);
+
+    // Inicializa
+    atualizarBarra();
+    countdown.textContent = formatarTempo(segundosRestantes);
+  </script>
+</body>
+</html>
